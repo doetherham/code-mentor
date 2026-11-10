@@ -15,7 +15,10 @@ dependencies = [
 ]
 
 [project.scripts]
-code-mentor = "code_mentor:main"
+code-mentor = "code_mentor.main:main"
+
+[project.optional-dependencies]
+anthropic = ["anthropic"]
 
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]
@@ -24,4 +27,5 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pyinstaller>=6.22.3",
+    "pytest",
 ]
