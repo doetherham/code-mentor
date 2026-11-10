@@ -1,3 +1,5 @@
+from pydantic import ValidationError
+
 from .agent import Agent
 from .config.settings import get_settings
 from .llm import make_client
@@ -5,9 +7,15 @@ from .tools.tools import build_tools
 
 
 def main():
-    cfg = get_settings()
-    llm = make_client(cfg)
+    try:
+        cfg = get_settings()
+    except ValidationError as e:
+        print("Ошибка в настройках (.env):")
+        for err in e.errors():
+            print(f"  {'.'.join(map(str, err['loc']))}: {err['msg']}")
+        return
 
+    llm = make_client(cfg)
     try:
         llm.ensure_ready()
     except RuntimeError as e:

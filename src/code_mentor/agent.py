@@ -1,85 +1,62 @@
-import ollama
-
 from .config.settings import Settings, get_settings
-from .parsing import parse_text_call
-
-
-def _role(m) -> str:
-    return m["role"] if isinstance(m, dict) else m.role
+from .llm.base import LLMClient
+from .tools.tools import Tool
 
 
 class Agent:
-    def __init__(self, tools, history=None, config: Settings | None = None):
+    def __init__(self, llm: LLMClient, tools: list[Tool],
+                 history: list[dict] | None = None,
+                 config: Settings | None = None):
+        self.llm = llm
         self.config = config or get_settings()
-        self.tools = tools
+        self.tools = {t.name: t for t in tools}
+        self.schemas = [t.schema() for t in tools]
         self.history = history if history is not None else []
-        self.client = ollama.Client(
-            host=self.config.BASE_URL,
-            timeout=self.config.TIMEOUT,
-            headers=self._headers(),
-        )
-
-    def _headers(self):
-        key = self.config.API_KEY
-        return {"Authorization": f"Bearer {key.get_secret_value()}"} if key else None
-
 
     def ask(self, user_message: str) -> str:
+        start = len(self.history)
         self.history.append({"role": "user", "content": user_message})
 
-        for _ in range(self.config.MAX_STEPS):
-            message = self._chat()
-            self.history.append(message)
-
-            calls = self._extract_calls(message)
-            if not calls:
-                return message.content
-
-            for name, args in calls:
+        try:
+            for _ in range(self.config.MAX_STEPS):
+                reply = self.llm.chat(self.config.SYSTEM, self._window(), self.schemas)
                 self.history.append({
-                    "role": "tool",
-                    "tool_name": name,
-                    "content": self._run_tool(name, args),
+                    "role": "assistant",
+                    "content": reply.text,
+                    "tool_calls": reply.tool_calls,
                 })
 
-        return "Достигнут лимит шагов"
+                if not reply.tool_calls:
+                    return reply.text
 
+                for call in reply.tool_calls:
+                    self.history.append({
+                        "role": "tool",
+                        "tool_call_id": call.id,
+                        "name": call.name,
+                        "content": self._run_tool(call.name, call.args),
+                    })
+        except Exception:
+            del self.history[start:]
+            raise
 
-    def _messages(self) -> list:
-        """System-промпт + последние MAX_HISTORY сообщений."""
+        text = "Достигнут лимит шагов"
+        self.history.append({"role": "assistant", "content": text})
+        return text
+
+    def _window(self) -> list[dict]:
+        """Последние MAX_HISTORY сообщений, начиная с сообщения пользователя."""
         recent = self.history[-self.config.MAX_HISTORY:]
-        while recent and _role(recent[0]) == "tool":
+        while recent and recent[0]["role"] != "user":
             recent = recent[1:]
-        system = [{"role": "system", "content": self.config.SYSTEM}] if self.config.SYSTEM else []
-        return system + recent
-
-    def _chat(self):
-        resp = self.client.chat(
-            model=self.config.MODEL,
-            messages=self._messages(),
-            tools=list(self.tools.values()) or None,
-            options={
-                "temperature": self.config.TEMPERATURE,
-                "top_p": self.config.TOP_P,
-                "num_predict": self.config.MAX_TOKENS,
-            },
-        )
-        return resp.message
-
-
-    def _extract_calls(self, message) -> list[tuple[str, dict]]:
-        if message.tool_calls:
-            return [(c.function.name, dict(c.function.arguments)) for c in message.tool_calls]
-
-        parsed = parse_text_call(message.content, set(self.tools))
-        return [parsed] if parsed else []
+        return recent
 
     def _run_tool(self, name: str, args: dict) -> str:
-        fn = self.tools.get(name)
-        if fn is None:
+        tool = self.tools.get(name)
+        if tool is None:
             return f"Ошибка: неизвестный инструмент {name}"
         try:
-            result = str(fn(**args))
+            result = str(tool.fn(**args))
         except TypeError as e:
             return f"Ошибка аргументов: {e}"
 
