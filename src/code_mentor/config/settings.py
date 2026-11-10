@@ -19,9 +19,9 @@ class Settings(BaseSettings):
     )
 
     # LLM
-    LLM_PROVIDER: Literal["ollama"] = "ollama"
+    LLM_PROVIDER: Literal["ollama", "openai", "anthropic"] = "ollama"
     MODEL: str
-    BASE_URL: str = "http://localhost:11434"
+    BASE_URL: str | None = None
     API_KEY: SecretStr | None = None
 
     # AGENT CONFIG
@@ -69,6 +69,12 @@ class Settings(BaseSettings):
             self.DATA_DIR = self.ROOT / self.DATA_DIR
         if not self.LOG_DIR.is_absolute():
             self.LOG_DIR = self.ROOT / self.LOG_DIR
+        return self
+
+    @model_validator(mode="after")
+    def _need_key(self):
+        if self.LLM_PROVIDER in {"openai", "anthropic"} and not self.API_KEY:
+            raise ValueError(f"Для {self.LLM_PROVIDER} нужен API_KEY")
         return self
 
 
