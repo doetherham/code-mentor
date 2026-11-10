@@ -1,4 +1,7 @@
+import os
 import uuid
+
+os.environ["NO_PROXY"] = "*"
 
 import ollama
 

@@ -7,7 +7,8 @@ class AnthropicClient:
     def __init__(self, cfg):
         self.cfg = cfg
         self.client = anthropic.Anthropic(
-            api_key=cfg.API_KEY.get_secret_value(), timeout=cfg.TIMEOUT
+            api_key=cfg.API_KEY.get_secret_value() if cfg.API_KEY else None,
+            timeout=cfg.TIMEOUT,
         )
 
     def ensure_ready(self) -> None:
@@ -15,18 +16,21 @@ class AnthropicClient:
             raise RuntimeError("Не задан API_KEY в .env")
 
     def chat(self, system, messages, tools) -> Reply:
-        resp = self.client.messages.create(
+        kwargs = dict(
             model=self.cfg.MODEL,
             max_tokens=self.cfg.MAX_TOKENS,
             temperature=self.cfg.TEMPERATURE,
-            system=system,
             messages=self._convert(messages),
-            tools=[
+        )
+        if system:
+            kwargs["system"] = system
+        if tools:
+            kwargs["tools"] = [
                 {"name": t["name"], "description": t["description"],
                  "input_schema": t["parameters"]}
                 for t in tools
-            ],
-        )
+            ]
+        resp = self.client.messages.create(**kwargs)
         text = "".join(b.text for b in resp.content if b.type == "text")
         calls = [ToolCall(b.id, b.name, b.input) for b in resp.content if b.type == "tool_use"]
         return Reply(text, calls)
@@ -38,7 +42,6 @@ class AnthropicClient:
             if m["role"] == "tool":
                 block = {"type": "tool_result", "tool_use_id": m["tool_call_id"],
                          "content": m["content"]}
-                # подряд идущие результаты склеиваются в одно user-сообщение
                 if out and out[-1]["role"] == "user" and isinstance(out[-1]["content"], list):
                     out[-1]["content"].append(block)
                 else:
