@@ -1,8 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from .paths import get_root
@@ -18,11 +18,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # LLM
-    LLM_PROVIDER: Literal["ollama", "openai", "anthropic"] = "ollama"
+    # LLM (Ollama)
     MODEL: str
-    BASE_URL: str | None = None
-    API_KEY: SecretStr | None = None
+    BASE_URL: str = "http://localhost:11434"
 
     # AGENT CONFIG
     TEMPERATURE: float = Field(0.7, ge=0, le=2)
