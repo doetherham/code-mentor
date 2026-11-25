@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     MAX_TOKENS: int = 4096
     TIMEOUT: int = 120
     MAX_STEPS: int = 5
+    NUM_CTX: int = 8192
 
     # BEHAVIOR
     SYSTEM: str = ""
@@ -67,12 +68,6 @@ class Settings(BaseSettings):
             self.DATA_DIR = self.ROOT / self.DATA_DIR
         if not self.LOG_DIR.is_absolute():
             self.LOG_DIR = self.ROOT / self.LOG_DIR
-        return self
-
-    @model_validator(mode="after")
-    def _need_key(self):
-        if self.LLM_PROVIDER in {"openai", "anthropic"} and not self.API_KEY:
-            raise ValueError(f"Для {self.LLM_PROVIDER} нужен API_KEY")
         return self
 
 

@@ -7,21 +7,15 @@ import ollama
 
 from .run_ollama import ensure_ollama
 from ...parsing import parse_text_call
-from ..base import Reply, ToolCall
-
-DEFAULT_URL = "http://localhost:11434"
-
+from ..client import Reply, ToolCall
 
 class OllamaClient:
     def __init__(self, cfg):
         self.cfg = cfg
-        self.base_url = cfg.BASE_URL or DEFAULT_URL
+        self.base_url = cfg.BASE_URL
 
-        key = cfg.API_KEY.get_secret_value() if cfg.API_KEY else None
-        self.client = ollama.Client(
-            host=self.base_url,
-            timeout=cfg.TIMEOUT,
-            headers={"Authorization": f"Bearer {key}"} if key else None,
+        self.base_url = cfg.BASE_URL(
+            host=self.base_url
         )
 
     def ensure_ready(self) -> None:
@@ -36,6 +30,7 @@ class OllamaClient:
                 "temperature": self.cfg.TEMPERATURE,
                 "top_p": self.cfg.TOP_P,
                 "num_predict": self.cfg.MAX_TOKENS,
+                "num_ctx": self.cfg.NUM_CTX,
             },
         )
         msg = resp.message

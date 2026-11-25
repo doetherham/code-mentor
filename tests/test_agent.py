@@ -2,7 +2,7 @@ import pytest
 
 from code_mentor.agent import Agent
 from code_mentor.config.settings import Settings
-from code_mentor.llm.base import Reply, ToolCall
+from code_mentor.llm.client import Reply, ToolCall
 from code_mentor.tools.tools import build_tools
 
 

@@ -1,7 +1,5 @@
 from .base import LLMClient
+from .ollama.ollama_client import OllamaClient
 
-
-def make_client(cfg) -> LLMClient:
-    if cfg.LLM_PROVIDER == "ollama":
-        from .ollama.ollama_client import OllamaClient
-        return OllamaClient(cfg)
+def get_client(cfg) -> LLMClient:
+    return OllamaClient(cfg)

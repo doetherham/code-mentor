@@ -24,7 +24,7 @@ def main():
 
     agent = Agent(llm=llm, tools=build_tools(cfg), config=cfg)
 
-    print(f"code-mentor [{cfg.LLM_PROVIDER}] ({cfg.MODEL}), проект: {cfg.ROOT}. Выход: exit")
+    print(f"code-mentor [ollama] ({cfg.MODEL}), проект: {cfg.ROOT}. Выход: exit")
     while True:
         try:
             q = input("\n> ").strip()
@@ -38,7 +38,7 @@ def main():
         try:
             print(agent.ask(q))
         except ConnectionError:
-            print(f"Потеряно соединение с {cfg.LLM_PROVIDER}. Проверьте сервер или сеть и повторите вопрос.")
+            print("Потеряно соединение с Ollama. Проверьте, что сервер запущен (ollama serve), и повторите вопрос.")
         except Exception as e:
             print(f"Ошибка: {e}")
 

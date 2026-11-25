@@ -1,5 +1,5 @@
 from .config.settings import Settings, get_settings
-from .llm.base import LLMClient
+from .llm.client import LLMClient
 from .tools.tools import Tool
 
 
