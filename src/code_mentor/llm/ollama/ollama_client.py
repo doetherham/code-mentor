@@ -14,10 +14,6 @@ class OllamaClient:
         self.cfg = cfg
         self.base_url = cfg.BASE_URL
 
-        self.base_url = cfg.BASE_URL(
-            host=self.base_url
-        )
-
     def ensure_ready(self) -> None:
         ensure_ollama(self.client, self.base_url)
 
