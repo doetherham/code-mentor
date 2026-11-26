@@ -6,8 +6,8 @@ os.environ["NO_PROXY"] = "*"
 import ollama
 
 from .run_ollama import ensure_ollama
-from ...parsing import parse_text_call
-from ..client import Reply, ToolCall
+from ..parsing import parse_text_call
+from .client import Reply, ToolCall
 
 class OllamaClient:
     def __init__(self, cfg):

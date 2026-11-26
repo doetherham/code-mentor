@@ -87,6 +87,25 @@ def test_path_escape_blocked(cfg):
     assert "Ошибка" in read("../../etc/passwd")
 
 
-def test_cloud_provider_needs_key(tmp_path):
-    with pytest.raises(Exception):
-        Settings(_env_file=None, MODEL="x", LLM_PROVIDER="openai", ROOT=tmp_path)
+def test_skip_blocks_read_and_list(cfg):
+    (cfg.ROOT / ".git" / "config").write_text("SECRET")
+    tools = {t.name: t.fn for t in build_tools(cfg)}
+
+    assert "SECRET" not in tools["read_file"](".git/config")
+    assert "Ошибка" in tools["read_file"](".git/config")
+    assert "Ошибка" in tools["list_files"](".git")
+    assert "print" in tools["read_file"]("a.py")
+
+
+def test_env_file_skipped_by_default(tmp_path):
+    (tmp_path / ".env").write_text("KEY=1")
+    cfg = Settings(_env_file=None, MODEL="x", ROOT=tmp_path)
+    tools = {t.name: t.fn for t in build_tools(cfg)}
+
+    assert "KEY=1" not in tools["read_file"](".env")
+    assert ".env" not in tools["list_files"](".")
+
+
+def test_root_defaults_to_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert Settings(_env_file=None, MODEL="x").ROOT == tmp_path

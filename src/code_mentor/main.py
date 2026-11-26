@@ -2,7 +2,7 @@ from pydantic import ValidationError
 
 from .agent import Agent
 from .config.settings import get_settings
-from .llm import make_client
+from .llm.ollama_client import OllamaClient
 from .tools.tools import build_tools
 
 
@@ -15,7 +15,7 @@ def main():
             print(f"  {'.'.join(map(str, err['loc']))}: {err['msg']}")
         return
 
-    llm = make_client(cfg)
+    llm = OllamaClient(cfg)
     try:
         llm.ensure_ready()
     except RuntimeError as e:

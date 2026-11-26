@@ -25,10 +25,12 @@ def build_tools(cfg: Settings) -> list[Tool]:
     skip = set(cfg.SKIP)
 
     def _safe(path: str):
-        """Путь внутри ROOT, выйти за его пределы (../) нельзя."""
+        """Путь внутри ROOT: без выхода за пределы (../) и без путей из SKIP."""
         p = (root / path).resolve()
         if not p.is_relative_to(root):
             raise ValueError("путь вне папки проекта")
+        if any(part in skip for part in p.relative_to(root).parts):
+            raise ValueError("доступ к этому пути закрыт")
         return p
 
     def list_files(path: str = ".") -> str:

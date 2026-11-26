@@ -1,7 +1,7 @@
 [project]
 name = "code-mentor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Локальный ИИ-ментор по коду на базе Ollama"
 readme = "README.md"
 authors = [
     { name = "VV", email = "sapoznikovivan95@gmail.com" }
@@ -9,16 +9,11 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "ollama>=0.6.3",
-    "openai>=3.49.0",
     "pydantic-settings>=2.16.2",
-    "python-dotenv>=1.2.4",
 ]
 
 [project.scripts]
 code-mentor = "code_mentor.main:main"
-
-[project.optional-dependencies]
-anthropic = ["anthropic"]
 
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]

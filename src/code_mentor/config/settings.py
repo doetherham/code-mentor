@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from .paths import get_root
@@ -40,15 +40,11 @@ class Settings(BaseSettings):
 
     # TOOLS
     TOOLS_ENABLED: bool = True
-    WEB_SEARCH_ENABLED: bool = False
-    CODE_EXECUTION_ENABLED: bool = False
     FILE_ACCESS_ENABLED: bool = True
 
     # FILESYSTEM
-    SKIP: Annotated[list[str], NoDecode] = []
-    ROOT: Path = Field(default_factory=get_root)
-    DATA_DIR: Path = Path("data")
-    LOG_DIR: Path = Path("logs")
+    SKIP: Annotated[list[str], NoDecode] = [".git", ".env"]
+    ROOT: Path = Field(default_factory=Path.cwd)
 
     @field_validator("SKIP", mode="before")
     @classmethod
@@ -60,15 +56,7 @@ class Settings(BaseSettings):
     @field_validator("ROOT", mode="before")
     @classmethod
     def _default_root(cls, v):
-        return get_root() if v == "default" else v
-
-    @model_validator(mode="after")
-    def _anchor_dirs(self):
-        if not self.DATA_DIR.is_absolute():
-            self.DATA_DIR = self.ROOT / self.DATA_DIR
-        if not self.LOG_DIR.is_absolute():
-            self.LOG_DIR = self.ROOT / self.LOG_DIR
-        return self
+        return Path.cwd() if v == "default" else v
 
 
 @lru_cache

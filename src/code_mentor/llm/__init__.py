@@ -1,6 +1,3 @@
-from .client import LLMClient
-from .ollama.ollama_client import OllamaClient
+from .client import LLMClient, Reply, ToolCall
 
-
-def make_client(cfg) -> LLMClient:
-    return OllamaClient(cfg)
+__all__ = ["LLMClient", "Reply", "ToolCall"]
